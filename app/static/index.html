@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Приватная локальная озвучка русского текста">
+  <title>Книжный голос</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Silero · локально · приватно</p>
+        <h1>Книжный голос</h1>
+        <p class="intro">Превратите русский текст в живую речь. Текст и запись остаются на вашем сервере.</p>
+      </div>
+      <div id="health" class="health" role="status"><span></span> Проверяем модель…</div>
+    </header>
+
+    <section class="workbench" aria-labelledby="editor-title">
+      <div class="editor-panel">
+        <div class="section-heading">
+          <h2 id="editor-title">Текст</h2>
+          <span id="counter">0 / 5 000</span>
+        </div>
+        <label class="sr-only" for="text">Русский текст для озвучки</label>
+        <textarea id="text" maxlength="5000" placeholder="Вставьте отрывок книги, статьи или собственный текст…" spellcheck="true"></textarea>
+        <p class="hint">Длинный текст автоматически разделится по предложениям.</p>
+      </div>
+
+      <form id="speech-form" class="controls-panel">
+        <h2>Голос и звучание</h2>
+        <label>Голос
+          <select id="voice" name="voice">
+            <option value="xenia">Ксения · мягкий</option>
+            <option value="baya">Бая · спокойный</option>
+            <option value="kseniya">Ксения 2 · ясный</option>
+            <option value="aidar">Айдар · мужской</option>
+            <option value="eugene">Евгений · мужской</option>
+          </select>
+        </label>
+        <fieldset>
+          <legend>Темп</legend>
+          <div class="segmented">
+            <label><input type="radio" name="speed" value="slow"><span>Медленно</span></label>
+            <label><input type="radio" name="speed" value="normal" checked><span>Обычно</span></label>
+            <label><input type="radio" name="speed" value="fast"><span>Быстро</span></label>
+          </div>
+        </fieldset>
+        <label>Качество
+          <select id="sample-rate" name="sample_rate">
+            <option value="48000">48 кГц · высокое</option>
+            <option value="24000">24 кГц · компактное</option>
+            <option value="8000">8 кГц · речь</option>
+          </select>
+        </label>
+        <label class="check"><input id="auto-stress" type="checkbox" checked><span>Автоматические ударения и «ё»</span></label>
+        <details>
+          <summary>Расширенный режим</summary>
+          <label class="check"><input id="ssml" type="checkbox"><span>Текст содержит SSML</span></label>
+        </details>
+        <button id="submit" class="primary" type="submit"><span class="button-label">Озвучить текст</span><span class="spinner" aria-hidden="true"></span></button>
+      </form>
+    </section>
+
+    <section id="message" class="message" role="alert" hidden></section>
+
+    <section id="result" class="result" aria-live="polite" hidden>
+      <div>
+        <p class="eyebrow">Запись готова</p>
+        <h2>Можно слушать</h2>
+        <p id="metadata" class="metadata"></p>
+      </div>
+      <audio id="player" controls preload="metadata"></audio>
+      <div class="actions">
+        <a id="download-wav" class="secondary" download>Скачать WAV</a>
+        <a id="download-mp3" class="secondary" download>Скачать MP3</a>
+        <button id="delete" class="danger" type="button">Удалить запись</button>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
+

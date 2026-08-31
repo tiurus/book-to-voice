@@ -1,0 +1,28 @@
+services:
+  tts:
+    platform: linux/amd64
+    build:
+      context: .
+    container_name: book-to-voice
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - silero-models:/srv/data/models
+      - tts-audio:/srv/data/audio
+    environment:
+      TTS_TORCH_THREADS: "4"
+      TTS_RETENTION_HOURS: "24"
+    mem_limit: 5g
+    cpus: 4.0
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8000/api/health | grep -q '\"model_ready\":true'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 180s
+      retries: 3
+
+volumes:
+  silero-models:
+  tts-audio:

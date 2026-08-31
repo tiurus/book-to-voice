@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+.env
+data/audio/*
+!data/audio/.gitkeep
+data/models/*
+!data/models/.gitkeep
+
