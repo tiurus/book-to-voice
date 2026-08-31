@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Очередь локальной озвучки текстовых файлов">
+  <title>Очередь файлов · Книжный голос</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell queue-shell">
+    <header class="masthead queue-masthead">
+      <div>
+        <nav class="top-nav" aria-label="Разделы">
+          <a href="/">Один текст</a>
+          <a class="active" href="/file-queue.html">Очередь файлов</a>
+        </nav>
+        <p class="eyebrow">Длинная форма</p>
+        <h1>Очередь файлов</h1>
+        <p class="intro">Загрузите книгу или статью в TXT. Сервис разделит текст, озвучит части по порядку и соберёт одну запись.</p>
+      </div>
+      <div id="health" class="health" role="status"><span></span> Проверяем модель…</div>
+    </header>
+
+    <section class="upload-card" aria-labelledby="upload-title">
+      <form id="file-form">
+        <div class="upload-main">
+          <div>
+            <p class="step-label">01 · Файл</p>
+            <h2 id="upload-title">Что озвучить</h2>
+          </div>
+          <label id="drop-zone" class="drop-zone" for="text-file">
+            <input id="text-file" name="file" type="file" accept=".txt,text/plain" required>
+            <span class="drop-icon" aria-hidden="true">TXT</span>
+            <span><strong id="file-label">Выберите TXT-файл</strong><small id="file-hint">UTF-8 или Windows-1251 · до 2 МБ</small></span>
+          </label>
+        </div>
+
+        <div class="upload-settings">
+          <div>
+            <p class="step-label">02 · Звучание</p>
+            <h2>Настройки</h2>
+          </div>
+          <label>Голос
+            <select id="file-voice" name="voice">
+              <option value="xenia">Ксения · мягкий</option>
+              <option value="baya">Бая · спокойный</option>
+              <option value="kseniya">Ксения 2 · ясный</option>
+              <option value="aidar">Айдар · мужской</option>
+              <option value="eugene">Евгений · мужской</option>
+            </select>
+          </label>
+          <label>Темп
+            <select id="file-speed" name="speed">
+              <option value="normal">Обычно</option>
+              <option value="slow">Медленно</option>
+              <option value="fast">Быстро</option>
+            </select>
+          </label>
+          <label>Качество
+            <select id="file-rate" name="sample_rate">
+              <option value="48000">48 кГц · высокое</option>
+              <option value="24000">24 кГц · компактное</option>
+              <option value="8000">8 кГц · речь</option>
+            </select>
+          </label>
+          <label class="check"><input id="file-stress" name="auto_stress" type="checkbox" checked><span>Автоматические ударения и «ё»</span></label>
+          <button id="file-submit" class="primary" type="submit"><span class="button-label">Добавить в очередь</span><span class="spinner" aria-hidden="true"></span></button>
+        </div>
+      </form>
+    </section>
+
+    <section id="file-message" class="message" role="alert" hidden></section>
+
+    <section class="queue-section" aria-labelledby="queue-title">
+      <div class="queue-heading">
+        <div>
+          <p class="step-label">03 · Результаты</p>
+          <h2 id="queue-title">Текущая очередь</h2>
+        </div>
+        <span id="queue-count" class="queue-count">0 файлов</span>
+      </div>
+      <div id="queue-list" class="queue-list">
+        <div class="empty-queue"><span>∿</span><p>Здесь появятся загруженные файлы и прогресс озвучки.</p></div>
+      </div>
+    </section>
+  </main>
+  <script src="/file-queue.js" defer></script>
+</body>
+</html>
+

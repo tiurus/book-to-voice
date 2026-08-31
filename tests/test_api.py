@@ -82,3 +82,53 @@ def test_only_one_synthesis_runs_at_once(app_factory) -> None:
 
     assert all(job["state"] == "completed" for job in jobs)
     assert synthesizer.max_active == 1
+
+
+def test_txt_file_queue_progress_and_download(app_factory) -> None:
+    with app_factory()[0] as client:
+        queued = client.post(
+            "/api/file-jobs",
+            files={"file": ("книга.txt", "Первая глава.\n\nВторая глава.".encode(), "text/plain")},
+            data={"voice": "baya", "speed": "fast", "sample_rate": "24000"},
+        )
+        assert queued.status_code == 202
+        job_id = queued.json()["job_id"]
+
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            job = client.get(f"/api/file-jobs/{job_id}").json()
+            if job["state"] == "completed":
+                break
+            time.sleep(0.01)
+        else:
+            raise AssertionError("file job did not finish")
+
+        assert job["filename"] == "книга.txt"
+        assert job["progress"] == 100
+        assert job["processed_fragments"] == 3
+        assert job["stage"] == "completed"
+        assert client.get(job["audio"]["mp3"]["url"]).status_code == 200
+        listing = client.get("/api/file-jobs").json()
+        assert [item["job_id"] for item in listing] == [job_id]
+
+
+def test_file_upload_validation_and_cp1251(app_factory) -> None:
+    with app_factory()[0] as client:
+        wrong_type = client.post(
+            "/api/file-jobs",
+            files={"file": ("book.pdf", b"content", "application/pdf")},
+        )
+        empty = client.post(
+            "/api/file-jobs",
+            files={"file": ("empty.txt", b"   ", "text/plain")},
+        )
+        cp1251 = client.post(
+            "/api/file-jobs",
+            files={"file": ("old.txt", "Текст с буквой ё.".encode("cp1251"), "text/plain")},
+        )
+
+    assert wrong_type.status_code == 422
+    assert "только файлы .txt" in wrong_type.json()["detail"]
+    assert empty.status_code == 422
+    assert "не содержит текста" in empty.json()["detail"]
+    assert cp1251.status_code == 202

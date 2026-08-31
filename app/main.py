@@ -5,14 +5,23 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query, Request, status
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
 from app.config import Settings
-from app.jobs import Job, JobManager, QueueFull
-from app.schemas import VOICES, AudioInfo, JobResponse, SpeechRequest
+from app.jobs import FileJob, Job, JobManager, QueueFull
+from app.schemas import (
+    VOICES,
+    AudioInfo,
+    FileJobResponse,
+    FileSpeechRequest,
+    JobResponse,
+    SpeechRequest,
+)
 from app.storage import AudioStore
 from app.synthesizer import SileroSynthesizer
 from app.text import InvalidSSML, validate_ssml
@@ -52,6 +61,21 @@ def _serialize_job(job: Job, manager: JobManager) -> JobResponse:
             "mp3": _audio_info(item.file_id, "mp3", item.mp3_size, item.duration_seconds),
         }
     return response
+
+
+def _serialize_file_job(job: FileJob, manager: JobManager) -> FileJobResponse:
+    base = _serialize_job(job, manager).model_dump()
+    request = job.request
+    assert isinstance(request, FileSpeechRequest)
+    return FileJobResponse(
+        **base,
+        filename=request.filename,
+        characters=len(request.text),
+        progress=job.progress,
+        processed_fragments=job.processed_fragments,
+        total_fragments=job.total_fragments,
+        stage=job.stage,
+    )
 
 
 async def _cleanup_loop(store: AudioStore, retention_hours: int) -> None:
@@ -151,6 +175,81 @@ def create_app(
             return _serialize_job(manager.get(job_id), manager)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.post(
+        "/api/file-jobs",
+        response_model=FileJobResponse,
+        status_code=status.HTTP_202_ACCEPTED,
+    )
+    async def create_file_job(
+        file: Annotated[UploadFile, File()],
+        voice: Annotated[str, Form()] = "xenia",
+        sample_rate: Annotated[int, Form()] = 48_000,
+        speed: Annotated[str, Form()] = "normal",
+        auto_stress: Annotated[bool, Form()] = True,
+    ) -> FileJobResponse:
+        filename = Path(file.filename or "text.txt").name
+        if Path(filename).suffix.lower() != ".txt":
+            raise HTTPException(status_code=422, detail="Поддерживаются только файлы .txt")
+        raw = await file.read(settings.max_file_size + 1)
+        await file.close()
+        if len(raw) > settings.max_file_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Файл должен быть меньше {settings.max_file_size // 1_000_000} МБ",
+            )
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            try:
+                text = raw.decode("cp1251")
+            except UnicodeDecodeError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Не удалось прочитать файл. Сохраните его в UTF-8",
+                ) from exc
+        if len(text) > settings.max_file_chars:
+            raise HTTPException(
+                status_code=413,
+                detail=f"В файле должно быть не больше {settings.max_file_chars:,} символов",
+            )
+        if not synthesizer.ready:
+            raise HTTPException(status_code=503, detail="Модель озвучки недоступна")
+        try:
+            request = FileSpeechRequest(
+                text=text,
+                filename=filename,
+                voice=voice,
+                sample_rate=sample_rate,
+                speed=speed,
+                auto_stress=auto_stress,
+            )
+        except ValidationError as exc:
+            message = exc.errors()[0].get("ctx", {}).get("error") or exc.errors()[0]["msg"]
+            raise HTTPException(status_code=422, detail=str(message)) from exc
+        try:
+            job = manager.enqueue_file(request)
+        except QueueFull as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
+        return _serialize_file_job(job, manager)
+
+    @app.get("/api/file-jobs", response_model=list[FileJobResponse])
+    async def list_file_jobs() -> list[FileJobResponse]:
+        return [
+            _serialize_file_job(job, manager)
+            for job in reversed(manager.jobs.values())
+            if isinstance(job, FileJob)
+        ]
+
+    @app.get("/api/file-jobs/{job_id}", response_model=FileJobResponse)
+    async def file_job_status(job_id: str) -> FileJobResponse:
+        try:
+            job = manager.get(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if not isinstance(job, FileJob):
+            raise HTTPException(status_code=404, detail="Задание файла не найдено")
+        return _serialize_file_job(job, manager)
 
     @app.get("/api/audio/{file_id}")
     async def audio(

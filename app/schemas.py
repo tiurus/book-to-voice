@@ -36,6 +36,25 @@ class SpeechRequest(BaseModel):
         return value
 
 
+class FileSpeechRequest(BaseModel):
+    text: str
+    filename: str
+    voice: Literal["aidar", "baya", "kseniya", "xenia", "eugene"] = "xenia"
+    sample_rate: Literal[8000, 24000, 48000] = 48_000
+    speed: Speed = Speed.normal
+    auto_stress: bool = True
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Файл не содержит текста")
+        if any(ord(char) < 32 and char not in "\n\r\t" for char in value):
+            raise ValueError("Текст содержит недопустимые управляющие символы")
+        return value
+
+
 class JobState(str, Enum):
     queued = "queued"
     processing = "processing"
@@ -59,3 +78,12 @@ class JobResponse(BaseModel):
     audio: dict[str, AudioInfo] | None = None
     error_code: str | None = None
     error: str | None = None
+
+
+class FileJobResponse(JobResponse):
+    filename: str
+    characters: int
+    progress: int = 0
+    processed_fragments: int = 0
+    total_fragments: int = 0
+    stage: str = "queued"

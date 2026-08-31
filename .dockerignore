@@ -3,7 +3,8 @@
 __pycache__
 .pytest_cache
 data
+output
+tmp
 tasks
 tests
 *.pyc
-

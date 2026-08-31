@@ -14,6 +14,8 @@ services:
     environment:
       TTS_TORCH_THREADS: "4"
       TTS_RETENTION_HOURS: "24"
+      TTS_MAX_FILE_SIZE: "2000000"
+      TTS_MAX_FILE_CHARS: "500000"
     mem_limit: 5g
     cpus: 4.0
     healthcheck:

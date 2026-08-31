@@ -17,6 +17,8 @@ class Settings:
     max_text_length: int = 5_000
     max_chunk_length: int = 900
     queue_size: int = 8
+    max_file_size: int = 2_000_000
+    max_file_chars: int = 500_000
     retention_hours: int = 24
     torch_threads: int = 4
     load_model: bool = True
@@ -46,6 +48,8 @@ class Settings:
             max_text_length=int(os.getenv("TTS_MAX_TEXT_LENGTH", "5000")),
             max_chunk_length=int(os.getenv("TTS_MAX_CHUNK_LENGTH", "900")),
             queue_size=int(os.getenv("TTS_QUEUE_SIZE", "8")),
+            max_file_size=int(os.getenv("TTS_MAX_FILE_SIZE", "2000000")),
+            max_file_chars=int(os.getenv("TTS_MAX_FILE_CHARS", "500000")),
             retention_hours=int(os.getenv("TTS_RETENTION_HOURS", "24")),
             torch_threads=int(os.getenv("TTS_TORCH_THREADS", "4")),
             load_model=_as_bool(os.getenv("TTS_LOAD_MODEL", "true")),

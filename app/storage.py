@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -71,5 +72,8 @@ class AudioStore:
                 deleted += 1
         for temporary in self.directory.glob("*.tmp"):
             if temporary.stat().st_mtime < cutoff:
-                temporary.unlink(missing_ok=True)
+                if temporary.is_dir():
+                    shutil.rmtree(temporary)
+                else:
+                    temporary.unlink(missing_ok=True)
         return deleted

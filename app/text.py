@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 
-SENTENCE_END = re.compile(r"(?<=[.!?…])(?:[\"»)]*)\s+")
+SENTENCE_END = re.compile(r'(?<=[.!?…])\s+|(?<=[.!?…]["»”])\s+|(?<=[.!?…]["»”][)])\s+')
 ALLOWED_SSML_TAGS = {"speak", "p", "s", "break", "prosody"}
 ALLOWED_SSML_ATTRIBUTES = {
     "break": {"time", "strength"},

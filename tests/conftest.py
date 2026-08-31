@@ -56,6 +56,14 @@ class FakeSynthesizer:
             with self._lock:
                 self.active -= 1
 
+    def synthesize_document(self, request, update) -> StoredAudio:
+        for done in range(4):
+            update(done, 3, "synthesizing", round(done / 3 * 85))
+        update(3, 3, "merging", 90)
+        result = self.synthesize(request)
+        update(3, 3, "converting", 95)
+        return result
+
 
 @pytest.fixture
 def app_factory(tmp_path: Path):

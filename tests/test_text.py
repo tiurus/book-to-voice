@@ -16,6 +16,14 @@ def test_split_text_preserves_content_and_limits_chunks() -> None:
     assert "первое предложение." in chunks[0]
 
 
+def test_split_text_preserves_closing_quotes() -> None:
+    source = "Он сказал: «Привет!» Она ответила: «Добрый день»."
+
+    chunks = split_text(source, limit=30)
+
+    assert " ".join(chunks) == source
+
+
 def test_valid_ssml() -> None:
     validate_ssml('<speak>Привет. <break time="300ms"/> Мир!</speak>')
 

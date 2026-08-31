@@ -4,8 +4,8 @@ __pycache__/
 .ruff_cache/
 *.py[cod]
 .env
+tmp/
 data/audio/*
 !data/audio/.gitkeep
 data/models/*
 !data/models/.gitkeep
-
